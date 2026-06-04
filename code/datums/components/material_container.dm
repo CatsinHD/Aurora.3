@@ -56,7 +56,7 @@
 				to_chat(user, span_notice("It has [amt] units of [lowertext(M.name)] stored."))
 
 /// Proc that allows players to fill the parent with mats
-/datum/component/material_container/proc/AttackBy(datum/source, obj/item/I, mob/living/user)
+/datum/component/material_container/proc/AttackBy(datum/source, obj/item/I, mob/user)
 	SIGNAL_HANDLER
 
 	var/list/tc = allowed_typecache
@@ -64,9 +64,9 @@
 		return
 	if(user.a_intent != INTENT_HELP)
 		return
-	if(I.item_flags & ABSTRACT)
+	if(I.abstract)
 		return
-	if((I.flags_1 & HOLOGRAM_1) || (I.item_flags & NO_MAT_REDEMPTION) || (tc && !is_type_in_typecache(I, tc)))
+	if((I.item_flags & !I.recyclable) || (tc && !is_type_in_typecache(I, tc)))
 		to_chat(user, span_warning("[parent] won't accept [I]!"))
 		return
 	. = COMPONENT_NO_AFTERATTACK
@@ -136,7 +136,7 @@
 	return primary_mat
 
 /// For inserting an amount of material
-/datum/component/material_container/proc/insert_amount_mat(amt, datum/material/mat)
+/datum/component/material_container/proc/insert_amount_mat(amt, singleton/material/mat)
 	if(!istype(mat))
 		mat = SSmaterials.GetMaterialRef(mat)
 	if(amt > 0 && has_space(amt))
@@ -151,9 +151,9 @@
 	return FALSE
 
 /// Uses an amount of a specific material, effectively removing it.
-/datum/component/material_container/proc/use_amount_mat(amt, datum/material/mat)
+/datum/component/material_container/proc/use_amount_mat(amt, singleton/material/mat)
 	if(!istype(mat))
-		mat = SSmaterials.GetMaterialRef(mat)
+		mat = GET_SINGLETON(mat)
 	var/amount = materials[mat]
 	if(mat)
 		if(amount >= amt)
@@ -163,9 +163,9 @@
 	return FALSE
 
 /// Proc for transfering materials to another container.
-/datum/component/material_container/proc/transer_amt_to(datum/component/material_container/T, amt, datum/material/mat)
+/datum/component/material_container/proc/transer_amt_to(datum/component/material_container/T, amt, singleton/material/mat)
 	if(!istype(mat))
-		mat = SSmaterials.GetMaterialRef(mat)
+		mat = GET_SINGLETON(mat)
 	if((amt==0)||(!T)||(!mat))
 		return FALSE
 	if(amt<0)
@@ -196,9 +196,9 @@
 	var/list/mats_to_remove = list() //Assoc list MAT | AMOUNT
 
 	for(var/x in mats) //Loop through all required materials
-		var/datum/material/req_mat = x
+		var/singleton/material/req_mat = x
 		if(!istype(req_mat))
-			req_mat = SSmaterials.GetMaterialRef(req_mat) //Get the ref if necesary
+			req_mat = GET_SINGLETON(req_mat) //Get the ref if necesary
 		if(!materials[req_mat]) //Do we have the resource?
 			return FALSE //Can't afford it
 		var/amount_required = mats[x] * multiplier
